@@ -1,6 +1,6 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 import testapp.urls
 
-urlpatterns = patterns('',  # NOQA
+urlpatterns = [
     url('', include(testapp.urls)),
-)
+]

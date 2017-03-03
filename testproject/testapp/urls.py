@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from .views import (AuthorList, AuthorDetail, FailsIntentionally, TestLogin,
                     TestBasicAuth, TestCustomAuthMethod, EchoView,
@@ -6,7 +6,7 @@ from .views import (AuthorList, AuthorDetail, FailsIntentionally, TestLogin,
                     ReadOnlyPublisherAutoList, PublisherAutoDetail,
                     PublisherAction, BookDetail, WildcardHandler)
 
-urlpatterns = patterns('',  # NOQA
+urlpatterns = [
     url(r'^authors/$', AuthorList.as_view(),
         name='author_list'),
     url(r'^authors/(?P<author_id>\d+)$', AuthorDetail.as_view(),
@@ -38,4 +38,4 @@ urlpatterns = patterns('',  # NOQA
         name='book_detail'),
 
     url(r'^.*$', WildcardHandler.as_view()),
-)
+]

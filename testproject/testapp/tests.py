@@ -20,12 +20,14 @@ class TestClient(Client):
 
     @staticmethod
     def process(response):
+        response.json = None
+        decoded_response_content = response.content.decode('utf-8')
+
         try:
-            decoded_response_content = response.content.decode('utf-8')
-        except UnicodeDecodeError:
-            response.json = None
-        else:
             response.json = json.loads(decoded_response_content)
+        except json.decoder.JSONDecodeError:
+            pass
+
         return response
 
     def get(self, url_name, data={}, follow=False, extra={}, *args, **kwargs):
@@ -199,7 +201,7 @@ class TestSerialization(TestCase):
         a1 = Author.objects.create(name="foo")
         a2 = Author.objects.create(name="bar")
         qs = Author.objects.all()
-        _ = list(qs)  # force sql query execution  # NOQA
+        list(qs)  # force sql query execution
 
         # Check that the same (cached) queryset is used, instead of a clone
         with self.assertNumQueries(0):
@@ -341,7 +343,7 @@ class TestEndpoint(TestCase):
         r = self.client.post('author_list', data={
             'name': 'New User',
         })  # multipart/form-data is default in test client
-        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.status_code, 201, r.content)
         self.assertEqual(r.json['name'], 'New User')
         self.assertEqual(r.json['name'],
                          Author.objects.get(id=r.json['id']).name)
