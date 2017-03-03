@@ -1,8 +1,12 @@
 from django.conf.urls import patterns, url
 
-from .views import *
+from .views import (AuthorList, AuthorDetail, FailsIntentionally, TestLogin,
+                    TestBasicAuth, TestCustomAuthMethod, EchoView,
+                    ErrorRaisingView, PublisherAutoList,
+                    ReadOnlyPublisherAutoList, PublisherAutoDetail,
+                    PublisherAction, BookDetail, WildcardHandler)
 
-urlpatterns = patterns('',
+urlpatterns = patterns('',  # NOQA
     url(r'^authors/$', AuthorList.as_view(),
         name='author_list'),
     url(r'^authors/(?P<author_id>\d+)$', AuthorDetail.as_view(),

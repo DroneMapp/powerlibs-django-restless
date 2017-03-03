@@ -1,4 +1,4 @@
-from django.forms.models import modelform_factory
+from django.forms.models import modelform_factory, model_to_dict
 
 from .views import Endpoint
 from .http import HttpError, Http200, Http201
@@ -95,7 +95,7 @@ class ListEndpoint(Endpoint):
         if form.is_valid():
             obj = form.save()
             return Http201(self.serialize(obj))
-            
+
         raise HttpError(400, 'Invalid Data', errors=form.errors)
 
 
@@ -168,6 +168,28 @@ class DetailEndpoint(Endpoint):
             raise HttpError(405, 'Method Not Allowed')
 
         return self.serialize(self.get_instance(request, *args, **kwargs))
+
+    def patch(self, request, *args, **kwargs):
+        """Update the object represented by this endpoint."""
+
+        if 'PATCH' not in self.methods:
+            raise HttpError(405, 'Method Not Allowed')
+
+        Form = _get_form(self.form, self.model)
+        instance = self.get_instance(request, *args, **kwargs)
+
+        form_data = model_to_dict(instance)
+        form_data.update(request.data)
+
+        form = Form(
+            form_data,
+            request.FILES,
+            instance=instance
+        )
+        if form.is_valid():
+            obj = form.save()
+            return Http200(self.serialize(obj))
+        raise HttpError(400, 'Invalid data', errors=form.errors)
 
     def put(self, request, *args, **kwargs):
         """Update the object represented by this endpoint."""
