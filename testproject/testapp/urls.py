@@ -1,14 +1,12 @@
 from django.conf.urls import url
 
-try:
-    from django.conf.urls import patterns
-except ImportError:
-    def patterns(prefix, *args):
-        return args
+from .views import (AuthorList, AuthorDetail, FailsIntentionally, TestLogin,
+                    TestBasicAuth, TestCustomAuthMethod, EchoView,
+                    ErrorRaisingView, PublisherAutoList,
+                    ReadOnlyPublisherAutoList, PublisherAutoDetail,
+                    PublisherAction, BookDetail, WildcardHandler)
 
-from .views import *
-
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^authors/$', AuthorList.as_view(),
         name='author_list'),
     url(r'^authors/(?P<author_id>\d+)$', AuthorDetail.as_view(),
@@ -40,4 +38,4 @@ urlpatterns = patterns('',
         name='book_detail'),
 
     url(r'^.*$', WildcardHandler.as_view()),
-)
+]
