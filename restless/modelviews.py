@@ -1,4 +1,4 @@
-from django.forms.models import modelform_factory
+from django.forms.models import modelform_factory, model_to_dict
 
 from .views import Endpoint
 from .http import HttpError, Http200, Http201
@@ -11,8 +11,9 @@ __all__ = ['ListEndpoint', 'DetailEndpoint', 'ActionEndpoint']
 def _get_form(form, model):
     from django import VERSION
 
-    if VERSION[:2] >= (1,8):
-        mf = lambda m: modelform_factory(m, fields='__all__')
+    if VERSION[:2] >= (1, 8):
+        def mf(model):
+            return modelform_factory(model, fields='__all__')
     else:
         mf = modelform_factory
 
@@ -95,7 +96,7 @@ class ListEndpoint(Endpoint):
         if form.is_valid():
             obj = form.save()
             return Http201(self.serialize(obj))
-            
+
         raise HttpError(400, 'Invalid Data', errors=form.errors)
 
 
@@ -120,7 +121,7 @@ class DetailEndpoint(Endpoint):
     model = None
     form = None
     lookup_field = 'pk'
-    methods = ['GET', 'PUT', 'DELETE']
+    methods = ['GET', 'PUT', 'PATCH', 'DELETE']
 
     def get_instance(self, request, *args, **kwargs):
         """Return a model instance represented by this endpoint.
@@ -169,6 +170,28 @@ class DetailEndpoint(Endpoint):
 
         return self.serialize(self.get_instance(request, *args, **kwargs))
 
+    def patch(self, request, *args, **kwargs):
+        """Update the object represented by this endpoint."""
+
+        if 'PATCH' not in self.methods:
+            raise HttpError(405, 'Method Not Allowed')
+
+        Form = _get_form(self.form, self.model)
+        instance = self.get_instance(request, *args, **kwargs)
+
+        form_data = model_to_dict(instance)
+        form_data.update(request.data)
+
+        form = Form(
+            form_data,
+            request.FILES,
+            instance=instance
+        )
+        if form.is_valid():
+            obj = form.save()
+            return Http200(self.serialize(obj))
+        raise HttpError(400, 'Invalid data', errors=form.errors)
+
     def put(self, request, *args, **kwargs):
         """Update the object represented by this endpoint."""
 
@@ -177,8 +200,7 @@ class DetailEndpoint(Endpoint):
 
         Form = _get_form(self.form, self.model)
         instance = self.get_instance(request, *args, **kwargs)
-        form = Form(request.data or None, request.FILES,
-            instance=instance)
+        form = Form(request.data or None, request.FILES, instance=instance)
         if form.is_valid():
             obj = form.save()
             return Http200(self.serialize(obj))

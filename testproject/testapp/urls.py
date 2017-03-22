@@ -6,7 +6,12 @@ except ImportError:
     def patterns(prefix, *args):
         return args
 
-from .views import *
+from .views import (AuthorList, AuthorDetail, FailsIntentionally, TestLogin,
+                    TestBasicAuth, TestCustomAuthMethod, EchoView,
+                    ErrorRaisingView, PublisherAutoList,
+                    ReadOnlyPublisherAutoList, PublisherAutoDetail,
+                    PublisherAction, BookDetail, WildcardHandler)
+
 
 urlpatterns = patterns('',
     url(r'^authors/$', AuthorList.as_view(),

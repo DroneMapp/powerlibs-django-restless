@@ -4,17 +4,19 @@ from restless.views import Endpoint
 from restless.models import serialize
 from restless.http import Http201, Http403, Http404, Http400, HttpError
 from restless.auth import (AuthenticateEndpoint, BasicHttpAuthMixin,
-    login_required)
+                           login_required)
 
 from restless.modelviews import ListEndpoint, DetailEndpoint, ActionEndpoint
 
-from .models import *
-from .forms import *
+from .models import Publisher, Author, Book
+from .forms import AuthorForm
 
-__all__ = ['AuthorList', 'AuthorDetail', 'FailsIntentionally', 'TestLogin',
+__all__ = [
+    'AuthorList', 'AuthorDetail', 'FailsIntentionally', 'TestLogin',
     'TestBasicAuth', 'WildcardHandler', 'EchoView', 'ErrorRaisingView',
     'PublisherAutoList', 'PublisherAutoDetail', 'ReadOnlyPublisherAutoList',
-    'PublisherAction', 'BookDetail', 'TestCustomAuthMethod']
+    'PublisherAction', 'BookDetail', 'TestCustomAuthMethod'
+]
 
 
 class AuthorList(Endpoint):
@@ -27,8 +29,7 @@ class AuthorList(Endpoint):
             author = form.save()
             return Http201(serialize(author))
         else:
-            return Http400(reason='invalid author data',
-                details=form.errors)
+            return Http400(reason='invalid author data', details=form.errors)
 
 
 class AuthorDetail(Endpoint):
@@ -56,8 +57,7 @@ class AuthorDetail(Endpoint):
             author = form.save()
             return serialize(author)
         else:
-            return Http400(reason='invalid author data',
-                details=form.errors)
+            return Http400(reason='invalid author data', details=form.errors)
 
 
 class FailsIntentionally(Endpoint):

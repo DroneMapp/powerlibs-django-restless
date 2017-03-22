@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import *
+from .models import Author
 
 __all__ = ['AuthorForm']
 
