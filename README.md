@@ -11,7 +11,7 @@ out there (we recommend Django REST framework).
 
 Here is a simple view implementing an API endpoint greeting the caller:
 
-    from restless.views import Endpoint
+    from powerlibs.django.restless.views import Endpoint
 
     class HelloWorld(Endpoint):
         def get(self, request):
