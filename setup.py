@@ -1,13 +1,12 @@
-import os
-import sys
-
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
 
-version = '0.1.0'
-requires = []
+version = '0.1.1'
+
+with open('requirements/production.txt') as requirements_file:
+    requires = [item for item in requirements_file]
 
 with open('README.md') as f:
     readme = f.read()
