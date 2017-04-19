@@ -36,8 +36,7 @@ def serialize_deprecated(src, fields=None, related=None):
 
     if (isinstance(src, models.Manager) or
             isinstance(src, models.query.QuerySet)):
-        return [serialize_deprecated(item, fields, related)
-            for item in src.all()]
+        return [serialize_deprecated(item, fields, related) for item in src.all()]
 
     if isinstance(src, list):
         return [serialize_deprecated(item, fields, related) for item in src]
@@ -57,8 +56,7 @@ def serialize_deprecated(src, fields=None, related=None):
                 if v is None:
                     v = (None, None, False)
                 (sub_fields, sub_related, flatten) = v
-                sub = serialize_deprecated(getattr(src, k), sub_fields,
-                    sub_related)
+                sub = serialize_deprecated(getattr(src, k), sub_fields, sub_related)
                 if flatten and sub:
                     for subk, subv in sub.items():
                         data[subk] = subv
@@ -74,14 +72,12 @@ def serialize_deprecated(src, fields=None, related=None):
         return src
 
 
-def serialize_model(obj, fields=None, include=None, exclude=None,
-        fixup=None):
-
+def serialize_model(obj, fields=None, include=None, exclude=None, fixup=None):
     fieldmap = {}
     for f in obj._meta.concrete_model._meta.local_fields:
         fieldmap[f.name] = f.attname
 
-    def getfield(f):
+    def getvalueof(f):
         return getattr(obj, fieldmap.get(f, f))
 
     if fields is None:
@@ -99,14 +95,15 @@ def serialize_model(obj, fields=None, include=None, exclude=None,
 
     data = {}
     for f in fields:
-        if isinstance(f, six.string_types):
-            data[f] = force_text(getfield(f), strings_only=True)
-        elif isinstance(f, tuple):
+        value = getvalueof(f)
+        if isinstance(value, tuple):
             k, v = f
             if callable(v):
                 data[k] = v(obj)
             elif isinstance(v, dict):
                 data[k] = serialize(getattr(obj, k), **v)
+        else:
+            data[f] = force_text(value, strings_only=True)
 
     if fixup:
         data = fixup(obj, data)
@@ -114,8 +111,7 @@ def serialize_model(obj, fields=None, include=None, exclude=None,
     return data
 
 
-def serialize(src, fields=None, related=None, include=None, exclude=None,
-        fixup=None):
+def serialize(src, fields=None, related=None, include=None, exclude=None, fixup=None):
     """Serialize Model or a QuerySet instance to Python primitives.
 
     By default, all the model fields (and only the model fields) are
@@ -186,8 +182,7 @@ def serialize(src, fields=None, related=None, include=None, exclude=None,
         return serialize_deprecated(src, fields=fields, related=related)
 
     def subs(subsrc):
-        return serialize(subsrc, fields=fields, include=include,
-            exclude=exclude, fixup=fixup)
+        return serialize(subsrc, fields=fields, include=include, exclude=exclude, fixup=fixup)
 
     if isinstance(src, models.Manager):
         return [subs(i) for i in src.all()]
@@ -201,8 +196,7 @@ def serialize(src, fields=None, related=None, include=None, exclude=None,
         return dict((k, subs(v)) for k, v in src.items())
 
     elif isinstance(src, models.Model):
-        return serialize_model(src, fields=fields, include=include,
-            exclude=exclude, fixup=fixup)
+        return serialize_model(src, fields=fields, include=include, exclude=exclude, fixup=fixup)
 
     else:
         return src
