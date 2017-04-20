@@ -1,4 +1,6 @@
 import six
+import datetime
+from decimal import Decimal
 
 from django.core import serializers
 from django.db import models
@@ -96,12 +98,8 @@ def serialize_model(obj, fields=None, include=None, exclude=None, fixup=None):
     data = {}
     for f in fields:
         value = getvalueof(f)
-        if isinstance(value, tuple):
-            k, v = f
-            if callable(v):
-                data[k] = v(obj)
-            elif isinstance(v, dict):
-                data[k] = serialize(getattr(obj, k), **v)
+        if isinstance(value, (datetime.datetime, datetime.date, datetime.time, Decimal)):
+            data[f] = '{}'.format(value)
         else:
             data[f] = force_text(value, strings_only=True)
 
