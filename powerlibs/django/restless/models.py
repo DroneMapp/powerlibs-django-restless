@@ -82,26 +82,24 @@ def serialize_model(obj, fields=None, include=None, exclude=None, fixup=None):
     def getvalueof(f):
         return getattr(obj, fieldmap.get(f, f))
 
-    if fields is None:
-        fields = list(fieldmap.keys())
-    else:
-        fields = list(fields)
+    fields = list(fields) if fields else list(fieldmap.keys())
 
-    if exclude is not None:
+    if exclude:
         fields = [f for f in fields if f not in exclude]
 
-    if include is not None:
-        for i in include:
-            if isinstance(i, tuple) or (isinstance(i, six.string_types)):
-                fields.append(i)
+    include = include or []
+    for i in include:
+        if isinstance(i, (tuple, six.string_types)):
+            fields.append(i)
 
     data = {}
     for f in fields:
         value = getvalueof(f)
+        field_real_name = fieldmap.get(f, f)
         if isinstance(value, (datetime.datetime, datetime.date, datetime.time, Decimal)):
-            data[f] = '{}'.format(value)
+            data[field_real_name] = '{}'.format(value)
         else:
-            data[f] = force_text(value, strings_only=True)
+            data[field_real_name] = force_text(value, strings_only=True)
 
     if fixup:
         data = fixup(obj, data)
