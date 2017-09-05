@@ -1,7 +1,7 @@
 from django.forms.models import modelform_factory
 
 from .views import Endpoint
-from .http import HttpError, Http200, Http201
+from .http import HttpError, Http200, Http201, Http400
 
 from .models import serialize
 
@@ -176,6 +176,10 @@ class DetailEndpoint(Endpoint):
         if 'PATCH' not in self.methods:
             raise HttpError(405, 'Method Not Allowed')
 
+        for field_name in ['created_by', 'updated_at', 'created_at']:
+            if field_name in request.data:
+                return Http400({"error": "It not is allowed  the field {} in method PATCH".format(field_name)})
+
         instance = self.get_instance(request, *args, **kwargs)
 
         for key, value in request.data.items():
@@ -190,6 +194,10 @@ class DetailEndpoint(Endpoint):
 
         if 'PUT' not in self.methods:
             raise HttpError(405, 'Method Not Allowed')
+
+        for field_name in ['updated_at', 'created_at']:
+            if field_name in request.data:
+                return Http400({"error": "It not is allowed the fields {} in method PUT".format(field_name)})
 
         Form = _get_form(self.form, self.model)
         instance = self.get_instance(request, *args, **kwargs)
