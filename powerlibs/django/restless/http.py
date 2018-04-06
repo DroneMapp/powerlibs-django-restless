@@ -1,16 +1,11 @@
+import json
+
 from django import http
 from django.core.serializers.json import DjangoJSONEncoder
 
-try:
-    # json module from python > 2.6
-    import json
-except ImportError:
-    # use packaged django version of simplejson
-    from django.utils import simplejson as json
-
 
 __all__ = ['JSONResponse', 'JSONErrorResponse', 'HttpError',
-    'Http200', 'Http201', 'Http400', 'Http401', 'Http403']
+           'Http200', 'Http201', 'Http400', 'Http401', 'Http403']
 
 
 class JSONResponse(http.HttpResponse):
@@ -23,8 +18,7 @@ class JSONResponse(http.HttpResponse):
         """
 
         kwargs['content_type'] = 'application/json; charset=utf-8'
-        super(JSONResponse, self).__init__(json.dumps(data,
-            cls=DjangoJSONEncoder), **kwargs)
+        super(JSONResponse, self).__init__(json.dumps(data, cls=DjangoJSONEncoder), **kwargs)
 
 
 class JSONErrorResponse(JSONResponse):

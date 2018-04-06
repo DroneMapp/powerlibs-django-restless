@@ -53,7 +53,7 @@ class Endpoint(View):
             ct, params = content_type.split(';', 1)
             try:
                 params = dict(param.split('=') for param in params.split())
-            except:
+            except Exception:
                 params = {}
         else:
             ct = content_type
@@ -87,8 +87,7 @@ class Endpoint(View):
             elif auth_response is None:
                 pass
             else:
-                raise TypeError('authenticate method must return '
-                    'HttpResponse instance or None')
+                raise TypeError('authenticate method must return HttpResponse instance or None')
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):

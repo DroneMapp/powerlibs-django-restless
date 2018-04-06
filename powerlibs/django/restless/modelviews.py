@@ -1,3 +1,5 @@
+from copy import copy
+
 from django.forms.models import modelform_factory
 
 from .views import Endpoint
@@ -5,7 +7,7 @@ from .http import HttpError, Http200, Http201
 
 from .models import serialize
 
-__all__ = ['ListEndpoint', 'DetailEndpoint', 'ActionEndpoint']
+__all__ = ['ListEndpoint', 'DetailEndpoint']
 
 
 def _get_form(form, model):
@@ -23,6 +25,13 @@ def _get_form(form, model):
         return mf(model)
     else:
         raise NotImplementedError('Form or Model class not specified')
+
+
+def method(the_real_method):
+    def new_method(self, *args, **kwargs):
+        if the_real_method.__name__.upper() not in self.methods:
+            raise HttpError(405, 'Method Not Allowed')
+        return the_real_method(self, *args, **kwargs)
 
 
 class ListEndpoint(Endpoint):
@@ -66,7 +75,8 @@ class ListEndpoint(Endpoint):
         else:
             raise HttpError(404, 'Resource Not Found')
 
-    def serialize(self, objs):
+    @staticmethod
+    def serialize(objs):
         """Serialize the objects in the response.
 
         By default, the method uses the :py:func:`restless.models.serialize`
@@ -76,28 +86,34 @@ class ListEndpoint(Endpoint):
 
         return serialize(objs)
 
+    @method
     def get(self, request, *args, **kwargs):
         """Return a serialized list of objects in this endpoint."""
-
-        if 'GET' not in self.methods:
-            raise HttpError(405, 'Method Not Allowed')
 
         qs = self.get_query_set(request, *args, **kwargs)
         return self.serialize(qs)
 
+    @method
     def post(self, request, *args, **kwargs):
         """Create a new object."""
 
-        if 'POST' not in self.methods:
-            raise HttpError(405, 'Method Not Allowed')
+        if isinstance(request.data, (list, tuple)):
+            # TODO: atomic transaction!
+            for entry in request.data:
+                new_request = copy(request)
+                new_request.POST = entry
+                new_request.data = entry
+                ret = self.post(new_request, *args, **kwargs)
+                if not isinstance(ret, (Http201, Http200)):
+                    return ret  # TODO: rollback transaction!
+            return Http201({})
 
         Form = _get_form(self.form, self.model)
-        form = Form(request.data or None, request.FILES)
-        if form.is_valid():
-            obj = form.save()
-            return Http201(self.serialize(obj))
-
-        raise HttpError(400, 'Invalid Data', errors=form.errors)
+        form = Form(entry or None, request.FILES)
+        if not form.is_valid():
+            raise HttpError(400, 'Invalid Data', errors=form.errors)
+        obj = form.save()
+        return Http201(self.serialize(obj))
 
 
 class DetailEndpoint(Endpoint):
@@ -162,19 +178,15 @@ class DetailEndpoint(Endpoint):
 
         return serialize(obj)
 
+    @method
     def get(self, request, *args, **kwargs):
         """Return the serialized object represented by this endpoint."""
 
-        if 'GET' not in self.methods:
-            raise HttpError(405, 'Method Not Allowed')
-
         return self.serialize(self.get_instance(request, *args, **kwargs))
 
+    @method
     def patch(self, request, *args, **kwargs):
         """Update the object represented by this endpoint."""
-
-        if 'PATCH' not in self.methods:
-            raise HttpError(405, 'Method Not Allowed')
 
         instance = self.get_instance(request, *args, **kwargs)
 
@@ -185,11 +197,9 @@ class DetailEndpoint(Endpoint):
 
         return Http200(self.serialize(instance))
 
+    @method
     def put(self, request, *args, **kwargs):
         """Update the object represented by this endpoint."""
-
-        if 'PUT' not in self.methods:
-            raise HttpError(405, 'Method Not Allowed')
 
         Form = _get_form(self.form, self.model)
         instance = self.get_instance(request, *args, **kwargs)
@@ -199,37 +209,10 @@ class DetailEndpoint(Endpoint):
             return Http200(self.serialize(obj))
         raise HttpError(400, 'Invalid data', errors=form.errors)
 
+    @method
     def delete(self, request, *args, **kwargs):
         """Delete the object represented by this endpoint."""
-
-        if 'DELETE' not in self.methods:
-            raise HttpError(405, 'Method Not Allowed')
 
         instance = self.get_instance(request, *args, **kwargs)
         instance.delete()
         return {}
-
-
-class ActionEndpoint(DetailEndpoint):
-    """
-    A variant of :py:class:`DetailEndpoint` for supporting a RPC-style action
-    on a resource. All the documentation for DetailEndpoint applies, but
-    only the `POST` HTTP method is allowed by default, and it invokes the
-    :py:meth:`ActionEndpoint.action` method to do the actual work.
-
-    If you want to support any of the other HTTP methods with their default
-    behaviour as in DetailEndpoint, just modify the `methods` list to
-    include the methods you need.
-
-    """
-    methods = ['POST']
-
-    def post(self, request, *args, **kwargs):
-        if 'POST' not in self.methods:
-            raise HttpError(405, 'Method Not Allowed')
-
-        instance = self.get_instance(request, *args, **kwargs)
-        return self.action(request, instance, *args, **kwargs)
-
-    def action(self, request, obj, *args, **kwargs):
-        raise HttpError(405, 'Method Not Allowed')
