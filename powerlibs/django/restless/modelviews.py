@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.forms.models import modelform_factory
 
 from .views import Endpoint
@@ -98,6 +99,14 @@ class ListEndpoint(Endpoint):
             return Http201(self.serialize(obj))
 
         raise HttpError(400, 'Invalid Data', errors=form.errors)
+
+    def delete(self, request, *args, **kwargs):
+        if 'DELETE' not in self.methods:
+            raise HttpError(405, 'Method Not Allowed')
+
+        qs = self.get_query_set(request, *args, **kwargs)
+        with transaction.atomic():
+            qs.delete()
 
 
 class DetailEndpoint(Endpoint):
