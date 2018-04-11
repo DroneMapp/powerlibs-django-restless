@@ -123,34 +123,20 @@ class DetailEndpoint(Endpoint):
     lookup_field = 'pk'
     methods = ['GET', 'PUT', 'PATCH', 'DELETE']
 
-    def get_instance(self, request, *args, **kwargs):
-        """Return a model instance represented by this endpoint.
-
-        If `model` is set and the primary key keyword argument is present,
-        the method attempts to get the model with the primary key equal
-        to the url argument.
-
-        By default, the primary key keyword argument name is `pk`. This can
-        be overridden by setting the `lookup_field` class attribute.
-
-        You can override the method to provide custom behaviour. The `args`
-        and `kwargs` parameters are passed in directly from the URL pattern
-        match.
-
-        If the method raises a :py:class:`restless.http.HttpError` exception,
-        the rest of the request processing is terminated and the error is
-        immediately returned to the client.
-        """
-
+    def _get_instance(self, required, *args, **kwargs):
         if self.model and self.lookup_field in kwargs:
             try:
                 return self.model.objects.get(**{
                     self.lookup_field: kwargs.get(self.lookup_field)
                 })
             except self.model.DoesNotExist:
+                pass
+
+    def get_instance(self, request, *args, **kwargs):
+        instance = self._get_instance(request, *args, **kwargs)
+        if instance is None:
                 raise HttpError(404, 'Resource Not Found')
-        else:
-            raise HttpError(404, 'Resource Not Found')
+        return instance
 
     def serialize(self, obj):
         """Serialize the object in the response.
@@ -192,11 +178,16 @@ class DetailEndpoint(Endpoint):
             raise HttpError(405, 'Method Not Allowed')
 
         Form = _get_form(self.form, self.model)
-        instance = self.get_instance(request, *args, **kwargs)
+        instance = self._get_instance(request, *args, **kwargs)
         form = Form(request.data or None, request.FILES, instance=instance)
         if form.is_valid():
             obj = form.save()
-            return Http200(self.serialize(obj))
+
+            if instance:
+                return Http200(self.serialize(obj))
+            else:
+                return Http201(self.serialize(obj))
+
         raise HttpError(400, 'Invalid data', errors=form.errors)
 
     def delete(self, request, *args, **kwargs):
