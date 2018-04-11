@@ -177,11 +177,16 @@ class DetailEndpoint(Endpoint):
         if 'PUT' not in self.methods:
             raise HttpError(405, 'Method Not Allowed')
 
+        pk = kwargs[self.lookup_field] if self.lookup_field in kwargs else None
+
         Form = _get_form(self.form, self.model)
         instance = self._get_instance(request, *args, **kwargs)
         form = Form(request.data or None, request.FILES, instance=instance)
         if form.is_valid():
-            obj = form.save()
+            obj = form.save(commit=False)
+            obj.pk = pk
+            obj.save()
+            form.save_m2m()
 
             if instance:
                 return Http200(self.serialize(obj))
