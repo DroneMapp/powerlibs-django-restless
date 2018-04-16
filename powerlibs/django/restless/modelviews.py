@@ -171,6 +171,14 @@ class DetailEndpoint(Endpoint):
 
         return Http200(self.serialize(instance))
 
+    def get_foreign_keys(self):
+        fields = []
+        for field in self.model._meta.fields:
+            class_name = field.__class__.__name__
+            if class_name == 'ForeignKey':
+                fields.append(field.name)
+        return fields
+
     def put(self, request, *args, **kwargs):
         """Update the object represented by this endpoint."""
 
@@ -178,6 +186,11 @@ class DetailEndpoint(Endpoint):
             raise HttpError(405, 'Method Not Allowed')
 
         pk = kwargs[self.lookup_field] if self.lookup_field in kwargs else None
+
+        for fk_field in self.get_foreign_keys():
+            id_field = f'{fk_field}_id'
+            if id_field in request.data:
+                request.data[fk_field] = request.data.pop(id_field)
 
         Form = _get_form(self.form, self.model)
         instance = self._get_instance(request, *args, **kwargs)
