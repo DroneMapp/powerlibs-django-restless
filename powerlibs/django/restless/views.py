@@ -115,4 +115,4 @@ class Endpoint(View):
 
         if isinstance(response, (HttpResponse, StreamingHttpResponse)):
             return response
-        response = Http200(response)
+        return Http200(response)
