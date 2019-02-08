@@ -3,7 +3,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from .http import Http200, Http500, HttpError
 
 import traceback
@@ -113,6 +113,6 @@ class Endpoint(View):
             else:
                 raise
 
-        if not isinstance(response, HttpResponse):
-            response = Http200(response)
-        return response
+        if isinstance(response, (HttpResponse, StreamingHttpResponse)):
+            return response
+        response = Http200(response)
