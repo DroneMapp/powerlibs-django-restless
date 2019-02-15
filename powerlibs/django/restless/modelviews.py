@@ -48,6 +48,7 @@ class ListEndpoint(Endpoint):
     form = None
     methods = ['GET', 'POST']
     fields = None
+    extra_fields = None
 
     def get_query_set(self, request, *args, **kwargs):
         """Return a QuerySet that this endpoint represents.
@@ -75,7 +76,7 @@ class ListEndpoint(Endpoint):
         method to customize the serialization.
         """
 
-        return serialize(objs, fields=self.fields)
+        return serialize(objs, fields=self.fields, include=self.extra_fields)
 
     def get(self, request, *args, **kwargs):
         """Return a serialized list of objects in this endpoint."""
@@ -123,6 +124,7 @@ class DetailEndpoint(Endpoint):
     form = None
     lookup_field = 'pk'
     fields = None
+    extra_fields = None
     methods = ['GET', 'PUT', 'PATCH', 'DELETE']
 
     def _get_instance(self, required, *args, **kwargs):
@@ -148,7 +150,7 @@ class DetailEndpoint(Endpoint):
         method to customize the serialization.
         """
 
-        return serialize(obj, fields=self.fields)
+        return serialize(obj, fields=self.fields, include=self.extra_fields)
 
     def get(self, request, *args, **kwargs):
         """Return the serialized object represented by this endpoint."""
