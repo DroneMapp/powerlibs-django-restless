@@ -151,7 +151,7 @@ class DetailEndpoint(Endpoint):
             except self.model.DoesNotExist:
                 pass
 
-            assert result.count() == 0
+            assert result.count() == 1
             return result
 
     def serialize(self, obj):
