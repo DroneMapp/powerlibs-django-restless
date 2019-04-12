@@ -178,6 +178,8 @@ class DetailEndpoint(Endpoint):
         if 'PATCH' not in self.methods:
             raise HttpError(405, 'Method Not Allowed')
 
+        instance = self.get_instance(request, *args, **kwargs)
+
         queryset = self.get_instance_as_queryset(request, *args, **kwargs)
         values = {}
         fields_names = self.get_fields_names()
@@ -187,7 +189,6 @@ class DetailEndpoint(Endpoint):
 
         queryset.update(**values)
 
-        instance = queryset[0]
         return Http200(self.serialize(instance))
 
     def get_foreign_keys(self):
