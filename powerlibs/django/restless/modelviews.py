@@ -142,6 +142,18 @@ class DetailEndpoint(Endpoint):
                 raise HttpError(404, 'Resource Not Found')
         return instance
 
+    def get_instance_as_queryset(self, required, *args, **kwargs):
+        if self.model and self.lookup_field in kwargs:
+            try:
+                result = self.model.objects.filter(**{
+                    self.lookup_field: kwargs.get(self.lookup_field)
+                })
+            except self.model.DoesNotExist:
+                pass
+
+            assert result.count() == 0
+            return result
+
     def serialize(self, obj):
         """Serialize the object in the response.
 
@@ -166,13 +178,11 @@ class DetailEndpoint(Endpoint):
         if 'PATCH' not in self.methods:
             raise HttpError(405, 'Method Not Allowed')
 
-        instance = self.get_instance(request, *args, **kwargs)
+        queryset = self.get_instance_as_queryset(request, *args, **kwargs)
+        values = request.data.items()
+        queryset.update(**values)
 
-        for key, value in request.data.items():
-            setattr(instance, key, value)
-
-        instance.save()
-
+        instance = queryset[0]
         return Http200(self.serialize(instance))
 
     def get_foreign_keys(self):
