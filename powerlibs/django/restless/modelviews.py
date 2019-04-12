@@ -127,7 +127,7 @@ class DetailEndpoint(Endpoint):
     extra_fields = None
     methods = ['GET', 'PUT', 'PATCH', 'DELETE']
 
-    def _get_instance(self, required, *args, **kwargs):
+    def _get_instance(self, request, *args, **kwargs):
         if self.model and self.lookup_field in kwargs:
             try:
                 return self.model.objects.get(**{
@@ -139,10 +139,10 @@ class DetailEndpoint(Endpoint):
     def get_instance(self, request, *args, **kwargs):
         instance = self._get_instance(request, *args, **kwargs)
         if instance is None:
-                raise HttpError(404, 'Resource Not Found')
+            raise HttpError(404, 'Resource Not Found')
         return instance
 
-    def get_instance_as_queryset(self, required, *args, **kwargs):
+    def get_instance_as_queryset(self, request, *args, **kwargs):
         if self.model and self.lookup_field in kwargs:
             try:
                 result = self.model.objects.filter(**{
@@ -188,8 +188,7 @@ class DetailEndpoint(Endpoint):
                 values[key] = value
 
         queryset.update(**values)
-
-        return Http200(self.serialize(instance))
+        return Http200(self.serialize(queryset[0]))
 
     def get_foreign_keys(self):
         fields = []
