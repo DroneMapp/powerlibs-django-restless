@@ -179,7 +179,7 @@ class DetailEndpoint(Endpoint):
             raise HttpError(405, 'Method Not Allowed')
 
         queryset = self.get_instance_as_queryset(request, *args, **kwargs)
-        values = request.data.items()
+        values = request.data
         queryset.update(**values)
 
         instance = queryset[0]
