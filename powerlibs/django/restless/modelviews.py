@@ -179,7 +179,12 @@ class DetailEndpoint(Endpoint):
             raise HttpError(405, 'Method Not Allowed')
 
         queryset = self.get_instance_as_queryset(request, *args, **kwargs)
-        values = request.data
+        values = {}
+        fields_names = self.get_fields_names()
+        for key, value in request.data.items():
+            if key in fields_names:
+                values[key] = value
+
         queryset.update(**values)
 
         instance = queryset[0]
@@ -191,6 +196,12 @@ class DetailEndpoint(Endpoint):
             class_name = field.__class__.__name__
             if class_name == 'ForeignKey':
                 fields.append(field.name)
+        return fields
+
+    def get_fields_names(self):
+        fields = []
+        for field in self.model._meta.fields:
+            fields.append(field.name)
         return fields
 
     def put(self, request, *args, **kwargs):
