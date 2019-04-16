@@ -1,3 +1,5 @@
+import re
+
 from django.forms.models import modelform_factory
 
 from .views import Endpoint
@@ -182,7 +184,11 @@ class DetailEndpoint(Endpoint):
         values = {}
         fields_names = self.get_fields_names()
         for key, value in request.data.items():
-            if key in fields_names:
+            clean_key = key
+            if key.endswith('_id'):
+                clean_key = re.sub('_id$', '', key)
+
+            if key in fields_names or clean_key in fields_names:
                 values[key] = value
 
         instance = self.get_instance(request, *args, **kwargs)
