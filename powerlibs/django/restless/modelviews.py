@@ -147,14 +147,15 @@ class DetailEndpoint(Endpoint):
     def get_instance_as_queryset(self, request, *args, **kwargs):
         if self.model and self.lookup_field in kwargs:
             lookup_value = kwargs.get(self.lookup_field)
-            try:
-                result = self.model.objects.filter(**{
-                    self.lookup_field: lookup_value
-                })
-            except self.model.DoesNotExist:
-                pass
+            result = self.model.objects.filter(**{
+                self.lookup_field: lookup_value
+            })
 
-            assert result.count() == 1, f'{self.model.__class__.__name__}: {self.lookup_field}:{lookup_value}'
+            count = result.count()
+            if count == 0:
+                raise HttpError(404, 'Resource Not Found')
+
+            assert count == 1, f'{self.model.__class__.__name__}: {self.lookup_field}:{lookup_value}'
             return result
 
     def serialize(self, obj):
