@@ -146,14 +146,15 @@ class DetailEndpoint(Endpoint):
 
     def get_instance_as_queryset(self, request, *args, **kwargs):
         if self.model and self.lookup_field in kwargs:
+            lookup_value = kwargs.get(self.lookup_field)
             try:
                 result = self.model.objects.filter(**{
-                    self.lookup_field: kwargs.get(self.lookup_field)
+                    self.lookup_field: lookup_value
                 })
             except self.model.DoesNotExist:
                 pass
 
-            assert result.count() == 1
+            assert result.count() == 1, f'{self.model.__class__.__name__}: {self.lookup_field}:{lookup_value}'
             return result
 
     def serialize(self, obj):
